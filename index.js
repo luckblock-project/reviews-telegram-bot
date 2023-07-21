@@ -21,6 +21,8 @@ wsClient.on('open', function open() {
     wsClient.on('message', async function incoming(data) {
         const res = JSON.parse(Buffer.from(data).toString('utf8')).result;
 
+        require('fs').appendFileSync('log.json', JSON.stringify(res) + '\n', 'utf8')
+
         if (!res?.data?.pair?.creation) return;
         if (res.data.event !== 'create') return;
 
@@ -60,7 +62,7 @@ Approved by BlockRover Ai ✅
 Powered by Blockrover.
             `.trim();
             
-            const m = await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, message);
+            const m = await bot.sendMessage(process.env.TELEGRAM_CHANNEL_ID, message);
 
             let lastStatus = null;
 
@@ -71,7 +73,7 @@ Powered by Blockrover.
                     if (data.status === 'errored' || data.status === 'unknown') {
                         message = message.replace(`contract is being audited...\n\n`, '');
                         bot.editMessageText(message, {
-                            chat_id: process.env.TELEGRAM_CHAT_ID,
+                            chat_id: process.env.TELEGRAM_CHANNEL_ID,
                             message_id: m.message_id,
                         });
                         clearInterval(interval);
@@ -79,7 +81,7 @@ Powered by Blockrover.
                     else if (data.status === 'ended') {
                         message = message.replace(`contract is being audited...\n\n`, `[Download Audit Report PDF](https://api.blockrover.io/audit/${contractAddress}/direct-pdf)`);
                             bot.editMessageText(message, {
-                                chat_id: process.env.TELEGRAM_CHAT_ID,
+                                chat_id: process.env.TELEGRAM_CHANNEL_ID,
                                 message_id: m.message_id,
                             });
                             clearInterval(interval);
@@ -121,12 +123,17 @@ Powered by Blockrover.
 
 console.log(`🤖 blockrover bot is started!`);
 
+process.on('uncaughtException', (er) => {
+    console.error(er);
+    cleanUpServer();
+});
+
 function cleanUpServer() {
     console.log(`🤖 blockrover bot is stopped!`);
     bot.stopPolling({ cancel: true });
     process.exit();
 }
 
-[`exit`, `SIGINT`, `SIGUSR1`, `SIGUSR2`, `uncaughtException`, `SIGTERM`].forEach((eventType) => {
+[`exit`, `SIGINT`, `SIGUSR1`, `SIGUSR2`, `SIGTERM`].forEach((eventType) => {
     process.on(eventType, cleanUpServer.bind(null, eventType));
 });

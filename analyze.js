@@ -47,8 +47,11 @@ const validateContract = async (contractAddress) => {
     const transactionData = await fetchTransactionData(contractAddress).catch(() => null);
 
     let tokensInfos = null;
-    if (transactionData.data?.txHistory.dexTrades[0]) {
+    if (transactionData.data?.txHistory?.dexTrades?.[0]) {
         tokensInfos = getTokensInfos(transactionData.data?.txHistory.dexTrades[0]);
+    } else {
+        console.log(`No transaction data found for ${contractAddress}`);
+        return false;
     }
 
     const holders = tData.lp_holders;
