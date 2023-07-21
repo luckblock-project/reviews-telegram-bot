@@ -5,7 +5,7 @@ const ws = require('ws');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 
 const TelegramBot = require('node-telegram-bot-api');
-const { validateContract, triggerAudit } = require('./analyze');
+const { validateContract, triggerAudit, fetchAuditStatus } = require('./analyze');
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
     polling: true
@@ -62,7 +62,9 @@ Approved by BlockRover Ai ✅
 Powered by Blockrover.
             `.trim();
             
-            const m = await bot.sendMessage(process.env.TELEGRAM_CHANNEL_ID, message);
+            const m = await bot.sendMessage(process.env.TELEGRAM_CHANNEL_ID, message, {
+                parse_mode: 'MarkdownV2',
+            });
 
             let lastStatus = null;
 
@@ -75,6 +77,7 @@ Powered by Blockrover.
                         bot.editMessageText(message, {
                             chat_id: process.env.TELEGRAM_CHANNEL_ID,
                             message_id: m.message_id,
+                            parse_mode: 'MarkdownV2'
                         });
                         clearInterval(interval);
                     }
@@ -83,6 +86,7 @@ Powered by Blockrover.
                             bot.editMessageText(message, {
                                 chat_id: process.env.TELEGRAM_CHANNEL_ID,
                                 message_id: m.message_id,
+                                parse_mode: 'MarkdownV2'
                             });
                             clearInterval(interval);
                         }

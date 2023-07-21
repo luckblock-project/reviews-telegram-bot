@@ -45,7 +45,7 @@ const validateContract = async (contractAddress) => {
     const data = await fetchMarketData(contractAddress).catch(() => null);
     const marketingWalletData = await fetchTokenMarketingWallet(contractAddress).catch(() => null);
     const transactionData = await fetchTransactionData(contractAddress).catch(() => null);
-
+/*
     let tokensInfos = null;
     if (transactionData.data?.txHistory?.dexTrades?.[0]) {
         tokensInfos = getTokensInfos(transactionData.data?.txHistory.dexTrades[0]);
@@ -64,7 +64,7 @@ const validateContract = async (contractAddress) => {
     const lockedPercentage = lockedHolders.map((holder) => parseFloat(holder.percent)).reduce((a, b) => a + b, 0);
     const burntPercentage = burntHolders.map((holder) => parseFloat(holder.percent)).reduce((a, b) => a + b, 0);
 
-    const isLockedOrBurnt = lockedPercentage > 0.9 || burntPercentage > 0.9;
+    const isLockedOrBurnt = lockedPercentage > 0.9 || burntPercentage > 0.9;*/
 
     const isHoneypot = !!parseInt(tData.is_honeypot);
     const isBlacklisted = !!parseInt(tData.is_blacklisted);
@@ -72,7 +72,7 @@ const validateContract = async (contractAddress) => {
     const isProxy = !!parseInt(tData.is_proxy);
     const modifiableTax = !!parseInt(tData.slippage_modifiable);
 
-    const isValidated = !isHoneypot && !isBlacklisted && !isMintable && !isProxy && !modifiableTax && isLockedOrBurnt;
+    const isValidated = !isHoneypot && !isBlacklisted && !isMintable && !isProxy && !modifiableTax; //&& isLockedOrBurnt;
 
     console.log({
         contractAddress,
@@ -81,7 +81,7 @@ const validateContract = async (contractAddress) => {
         isMintable,
         isProxy,
         modifiableTax,
-        isLockedOrBurnt,
+        //isLockedOrBurnt,
         isValidated
     })
 
