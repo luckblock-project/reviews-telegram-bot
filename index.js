@@ -60,7 +60,10 @@ wsClient.on('open', function open() {
             pairContractAddress
         }
 
-        checkSendToken(tokenData, true);
+        setTimeout(() => {
+            console.log(`🤖 Queueing checking ${symbol} (${contractAddress})...`);
+            checkSendToken(tokenData, true);
+        }, 10_000);
 
     });
 
@@ -93,26 +96,20 @@ const checkSendToken = async (tokenData, firstTry) => {
 
     console.log(`🤖 Checking ${tokenData.name} (${tokenData.contractAddress})...`);
 
-    const tokenStatistics = await fetchTokenStatistics(tokenData.contractAddress, tokenData.pairContractAddress);
+    const tokenStatistics = await fetchTokenStatistics(tokenData.contractAddress, tokenData.pairContractAddress)
+        .catch((e) => {
+            console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) statistics error!`, e);
+        });
+
+    if (!tokenStatistics) return;
 
     if (tokenStatistics.isValidated) {
 
         console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is validated!`);
 
-        let pErr;
-        const [statistics, initialAuditData] = await Promise.all([
-            fetchTokenStatistics(contractAddress),
-            fetchAuditData(contractAddress)
-        ]).catch((e) => {
-            pErr = e;
-        });
-    
-        if (!statistics) {
-            return void console.log(`🤖 ${contractAddress} statistics error!`, pErr);
-        }
-    
+        const initialAuditData = await fetchAuditData(contractAddress);
         const initialAuditIsReady = initialAuditData && initialAuditData.status === 'success';
-        const statisticsMessage = formatTokenStatistics(statistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null);
+        const statisticsMessage = formatTokenStatistics(tokenStatistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null);
     
         const message = await bot.sendPhoto(process.env.TELEGRAM_CHAT_ID, 'https://i.imgur.com/XGsx0sl.jpg', {
             caption: statisticsMessage
@@ -131,7 +128,7 @@ const checkSendToken = async (tokenData, firstTry) => {
             });
     
             ee.on('end', (audit) => {
-                const auditStatisticsMessage = formatTokenStatistics(statistics, true, audit);
+                const auditStatisticsMessage = formatTokenStatistics(tokenStatistics, true, audit);
                 bot.editMessageCaption(auditStatisticsMessage, {
                     parse_mode: 'Markdown',
                     message_id: message.message_id,
@@ -167,6 +164,8 @@ const checkSendToken = async (tokenData, firstTry) => {
         }
     } else {
         console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is not validated!`);
+
+        console.log(tokenStatistics.goPlusContractSecurity, tokenStatistics.goPlusTradingSecurity);
     }
 
 }
