@@ -1,11 +1,15 @@
-const { config } = require('dotenv');
+import { config } from 'dotenv';
 config();
 
-const ws = require('ws');
-const { HttpsProxyAgent } = require('https-proxy-agent');
+import ws from 'ws';
 
-const TelegramBot = require('node-telegram-bot-api');
-const { validateContract, triggerAudit, fetchAuditStatus } = require('./analyze');
+import TelegramBot from 'node-telegram-bot-api';
+import { fetchTokenStatistics } from '@blockrover/goplus-ai-analyzer-js';
+
+import { checkSendToken } from './check-send-token';
+
+import { JsonDB, Config } from 'node-json-db';
+const db = new JsonDB(new Config("db", true, false, '/'));
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
     polling: true
@@ -26,78 +30,29 @@ wsClient.on('open', function open() {
         if (!res?.data?.pair?.creation) return;
         if (res.data.event !== 'create') return;
 
+        const main = res.data.pair.token1;
         const pair = res.data.pair.token0;
 
-        if (!pair) return;
+        if (!pair || !main) return;
 
-        const name = pair.name;
-        const symbol = pair.symbol;
-        const contractAddress = pair.id;
+        const name = main.name;
+        const symbol = main.symbol;
+        const contractAddress = main.id;
 
-        const isValidated = await validateContract(contractAddress);
+        const pairName = pair.name;
+        const pairSymbol = pair.symbol;
+        const pairContractAddress = pair.id;
 
-        if (isValidated) {
-
-            triggerAudit(contractAddress);
-
-            let message = `
-*Token Name:* ${name}
-*Symbol:* ${symbol}
-*Chain:* Ethereum
-*Contract Address:* ${contractAddress}
-
-AI results:
-
-No honeypot ✅
-No blacklist ✅
-No modifiable tax ✅
-No mint function ✅
-No proxy contract ✅
-Liquidty locked or burnt ✅
-
-contract is being audited...
-
-Approved by BlockRover Ai ✅
-
-Powered by Blockrover.
-            `.trim();
-            
-            const m = await bot.sendMessage(process.env.TELEGRAM_CHANNEL_ID, message, {
-                parse_mode: 'MarkdownV2',
-            });
-
-            let lastStatus = null;
-
-            let interval = setInterval(async () => {
-                fetchAuditStatus(contractAddress)
-                .then(async (data) => {
-                    console.log(data)
-                    if (data.status === 'errored' || data.status === 'unknown') {
-                        message = message.replace(`contract is being audited...\n\n`, '');
-                        bot.editMessageText(message, {
-                            chat_id: process.env.TELEGRAM_CHANNEL_ID,
-                            message_id: m.message_id,
-                            parse_mode: 'MarkdownV2'
-                        });
-                        clearInterval(interval);
-                    }
-                    else if (data.status === 'ended') {
-                        message = message.replace(`contract is being audited...\n\n`, `[Download Audit Report PDF](https://api.blockrover.io/audit/${contractAddress}/direct-pdf)`);
-                            bot.editMessageText(message, {
-                                chat_id: process.env.TELEGRAM_CHANNEL_ID,
-                                message_id: m.message_id,
-                                parse_mode: 'MarkdownV2'
-                            });
-                            clearInterval(interval);
-                        }
-                        else if (data.status !== lastStatus) {
-                            console.log('status changed', data.status);
-                            lastStatus = data.status;
-                        }
-                    });
-                }, 2000);
-
+        const data = {
+            name,
+            symbol,
+            contractAddress,
+            pairName,
+            pairSymbol,
+            pairContractAddress
         }
+
+        checkSendToken(data, true);
 
     });
 
@@ -124,6 +79,83 @@ Powered by Blockrover.
     }));
 
 });
+
+
+const checkSendToken = async (tokenData, firstTry) => {
+
+    const tokenStatistics = await fetchTokenStatistics(tokenData.contractAddress, tokenData.pairContractAddress);
+
+    if (tokenStatistics.isValidated) {
+
+        const [statistics, initialAuditData] = await Promise.all([
+            fetchTokenStatistics(contractAddress),
+            fetchAuditData(contractAddress)
+        ]);
+    
+        if (!statistics) return;
+    
+        const initialAuditIsReady = initialAuditData && initialAuditData.status === 'success';
+        const statisticsMessage = formatTokenStatistics(statistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null);
+    
+        const message = await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, statisticsMessage);
+    
+        if (!initialAuditIsReady) {
+    
+            triggerAudit(contractAddress);
+    
+            const ee = new EventEmitter();
+            // subscribe to audit changes
+            waitForAuditEndOrError(contractAddress, ee);
+    
+            ee.on('status-update', (status) => {
+                console.log(`🤖 ${contractAddress} audit status update: ${status}`);
+            });
+    
+            ee.on('end', (audit) => {
+                const auditStatisticsMessage = formatTokenStatistics(statistics, true, audit);
+                bot.editMessageText(auditStatisticsMessage, {
+                    parse_mode: 'Markdown',
+                    message_id: message.message_id,
+                    chat_id: chatId
+                });
+            });
+    
+            ee.on('error', (error) => {
+                console.log(`🤖 ${contractAddress} audit error: ${error}`);
+            });
+        }
+    }
+    else if (tokenStatistics.isPartiallyValidated) {
+        if (!firstTry) return;
+        else {
+
+            bot.sendMessage(process.env.TELEGRAM_CHAT_ID, `🤖 ${tokenData.name} (${tokenData.symbol}) is partially validated! We will monitor this token for 60 minutes, and we will notify you if the liquidity becomes locked or burnt.`);
+
+            db.push(`/tokens/${tokenData.contractAddress}`, {
+                ...tokenData,
+                addedAt: Date.now()
+            });
+        }
+    } else {
+        console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is not validated!`);
+    }
+
+}
+
+setInterval(() => {
+
+    const tokensToRetry = db.getData('/tokens');
+
+    for (const token of tokensToRetry) {
+        // if token is added more than 60 minutes ago, remove it from the list
+        if (Date.now() - token.addedAt > 60 * 60 * 1000) {
+            db.delete(`/tokens/${token.contractAddress}`);
+        } else {
+            checkSendToken(token, false);
+        }
+    }
+
+}, 60_000);
 
 console.log(`🤖 blockrover bot is started!`);
 

@@ -9,11 +9,14 @@
   },
   "keywords": [],
   "author": "",
+  "type": "module",
   "license": "ISC",
   "dependencies": {
+    "@blockrover/goplus-ai-analyzer-js": "^1.0.1",
     "dotenv": "^16.3.1",
     "easy-json-database": "^1.5.1",
     "https-proxy-agent": "^7.0.1",
+    "node-json-db": "^2.2.0",
     "node-telegram-bot-api": "^0.61.0",
     "ws": "^8.13.0"
   }

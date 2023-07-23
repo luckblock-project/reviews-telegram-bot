@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@blockrover/goplus-ai-analyzer-js':
+    specifier: ^1.0.1
+    version: 1.0.1
   dotenv:
     specifier: ^16.3.1
     version: 16.3.1
@@ -14,6 +17,9 @@ dependencies:
   https-proxy-agent:
     specifier: ^7.0.1
     version: 7.0.1
+  node-json-db:
+    specifier: ^2.2.0
+    version: 2.2.0
   node-telegram-bot-api:
     specifier: ^0.61.0
     version: 0.61.0
@@ -22,6 +28,10 @@ dependencies:
     version: 8.13.0
 
 packages:
+
+  /@blockrover/goplus-ai-analyzer-js@1.0.1:
+    resolution: {integrity: sha512-b2ncQQyWM7qVEa3QQCW3+HDbMilO71vq2zQaRR6Pt6t34HfvadBZ8cMdI5xpTkpdPcAToGYAmCKlETOWz2KrcA==, tarball: https://npm.pkg.github.com/download/@blockrover/goplus-ai-analyzer-js/1.0.1/c44d8a7805031e765ed61b4079fc731cc97733aa}
+    dev: false
 
   /agent-base@7.1.0:
     resolution: {integrity: sha512-o/zjMZRhJxny7OyEF+Op8X+efiELC7k7yOjMzgfzVqOzXqkBkWI79YoTdOtsuWd5BWhAGAuOY/Xa6xpiaWXiNg==}
@@ -608,6 +618,12 @@ packages:
     resolution: {integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==}
     dev: false
 
+  /node-json-db@2.2.0:
+    resolution: {integrity: sha512-GBuXPjItZ+XivMxR7bhSjVeXKiHZKRN/HbvqrwVemV6V5atcnIIZbg2J2vJHE6RYHydtPCJoUy05YaK4wQO0TA==}
+    dependencies:
+      rwlock: 5.0.0
+    dev: false
+
   /node-telegram-bot-api@0.61.0:
     resolution: {integrity: sha512-BZXd8Bh2C5+uBEQuuI3FD7TFJF3alV+6oFQt8CNLx3ldX/hsd+NYyllTX+Y+5X0tG+xtcRQQjbfLgz/4sRvmBQ==}
     engines: {node: '>=0.12'}
@@ -753,6 +769,10 @@ packages:
       tough-cookie: 2.5.0
       tunnel-agent: 0.6.0
       uuid: 3.4.0
+    dev: false
+
+  /rwlock@5.0.0:
+    resolution: {integrity: sha512-XgzRqLMfCcm9QfZuPav9cV3Xin5TRcIlp4X/SH3CvB+x5D2AakdlEepfJKDd8ByncvfpcxNWdRZVUl38PS6ZJg==}
     dev: false
 
   /safe-array-concat@1.0.0:
