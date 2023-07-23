@@ -225,7 +225,7 @@ setInterval(async () => {
         }
     }
 
-}, 10_000);
+}, 30_000);
 
 console.log(`🤖 blockrover bot is started!`);
 
