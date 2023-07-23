@@ -5,8 +5,10 @@ import ws from 'ws';
 
 import { appendFileSync } from 'fs';
 
+import { EventEmitter } from 'events';
+
 import TelegramBot from 'node-telegram-bot-api';
-import { WAITING_GENERATION_AUDIT_MESSAGE, fetchTokenStatistics } from '@blockrover/goplus-ai-analyzer-js';
+import { WAITING_GENERATION_AUDIT_MESSAGE, fetchTokenStatistics, fetchAuditData, formatTokenStatistics, waitForAuditEndOrError, triggerAudit } from '@blockrover/goplus-ai-analyzer-js';
 
 import { JsonDB, Config } from 'node-json-db';
 const db = new JsonDB(new Config("db", true, false, '/'));
@@ -60,8 +62,9 @@ wsClient.on('open', function open() {
             pairContractAddress
         }
 
+        console.log(`🤖 Queueing checking ${symbol} (${contractAddress})...`);
+
         setTimeout(() => {
-            console.log(`🤖 Queueing checking ${symbol} (${contractAddress})...`);
             checkSendToken(tokenData, true);
         }, 10_000);
 
@@ -96,6 +99,8 @@ const checkSendToken = async (tokenData, firstTry) => {
 
     console.log(`🤖 Checking ${tokenData.name} (${tokenData.contractAddress})...`);
 
+    const contractAddress = tokenData.contractAddress;
+
     const tokenStatistics = await fetchTokenStatistics(tokenData.contractAddress, tokenData.pairContractAddress)
         .catch((e) => {
             console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) statistics error!`, e);
@@ -103,17 +108,18 @@ const checkSendToken = async (tokenData, firstTry) => {
 
     if (!tokenStatistics) return;
 
-    if (tokenStatistics.isValidated) {
+    if (tokenStatistics.isValidated || (tokenStatistics.isPartiallyValidated && firstTry)) {
 
-        console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is validated!`);
+        console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is validated! (${tokenStatistics.isPartiallyValidated ? 'PARTIAL': 'COMPLETE'})`);
 
         const initialAuditData = await fetchAuditData(contractAddress);
         const initialAuditIsReady = initialAuditData && initialAuditData.status === 'success';
         const statisticsMessage = formatTokenStatistics(tokenStatistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null);
     
-        const message = await bot.sendPhoto(process.env.TELEGRAM_CHAT_ID, 'https://i.imgur.com/XGsx0sl.jpg', {
-            caption: statisticsMessage
+        const message = await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, statisticsMessage, {
+            parse_mode: 'Markdown'
         });
+        await bot.sendPhoto(process.env.TELEGRAM_CHAT_ID, 'https://i.imgur.com/XGsx0sl.jpg');
     
         if (!initialAuditIsReady) {
     
@@ -129,10 +135,10 @@ const checkSendToken = async (tokenData, firstTry) => {
     
             ee.on('end', (audit) => {
                 const auditStatisticsMessage = formatTokenStatistics(tokenStatistics, true, audit);
-                bot.editMessageCaption(auditStatisticsMessage, {
+                bot.editMessageText(auditStatisticsMessage, {
                     parse_mode: 'Markdown',
                     message_id: message.message_id,
-                    chat_id: chatId
+                    chat_id: process.env.TELEGRAM_CHAT_ID
                 });
             });
     
@@ -140,32 +146,28 @@ const checkSendToken = async (tokenData, firstTry) => {
                 console.log(`🤖 ${contractAddress} audit error: ${error}`);
 
                 const newStatisticsErrored = statisticsMessage.replace(WAITING_GENERATION_AUDIT_MESSAGE, `[Use our website](https://blockrover.io) to generate the audit report.`);
-                bot.editMessageCaption(newStatisticsErrored, {
+                bot.editMessageText(newStatisticsErrored, {
                     parse_mode: 'Markdown',
                     message_id: message.message_id,
-                    chat_id: chatId
+                    chat_id: process.env.TELEGRAM_CHAT_ID
                 });
             });
         }
     }
-    else if (tokenStatistics.isPartiallyValidated) {
+    else {
+        console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is not validated!`);
+
+        console.log(tokenStatistics.goPlusContractSecurity, tokenStatistics.goPlusTradingSecurity);
+    }
+
+    if (tokenStatistics.isPartiallyValidated) {
         
         console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is partially validated!`);
-
-        if (!firstTry) return;
-        else {
-
-            bot.sendMessage(process.env.TELEGRAM_CHAT_ID, `⚠️ ${tokenData.name} (${tokenData.symbol}) is partially validated! We will monitor this token for 60 minutes, and we will notify you if the liquidity becomes locked or burnt.`);
 
             db.push(`/tokens/${tokenData.contractAddress}`, {
                 ...tokenData,
                 addedAt: Date.now()
             });
-        }
-    } else {
-        console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is not validated!`);
-
-        console.log(tokenStatistics.goPlusContractSecurity, tokenStatistics.goPlusTradingSecurity);
     }
 
 }
@@ -186,7 +188,7 @@ setInterval(async () => {
         }
     }
 
-}, 60_000);
+}, 10_000);
 
 console.log(`🤖 blockrover bot is started!`);
 
