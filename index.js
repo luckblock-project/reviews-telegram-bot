@@ -30,8 +30,13 @@ wsClient.on('open', function open() {
         if (!res?.data?.pair?.creation) return;
         if (res.data.event !== 'create') return;
 
-        const main = res.data.pair.token1;
-        const pair = res.data.pair.token0;
+        //const main = res.data.pair.token1;
+        //const pair = res.data.pair.token0;
+
+        // get the pair that is not weth
+
+        const main = res.data.pair.token0.symbol === 'WETH' ? res.data.pair.token1 : res.data.pair.token0;
+        const pair = res.data.pair.token0.symbol === 'WETH' ? res.data.pair.token0 : res.data.pair.token1;
 
         if (!pair || !main) return;
 
@@ -129,7 +134,7 @@ const checkSendToken = async (tokenData, firstTry) => {
         if (!firstTry) return;
         else {
 
-            bot.sendMessage(process.env.TELEGRAM_CHAT_ID, `🤖 ${tokenData.name} (${tokenData.symbol}) is partially validated! We will monitor this token for 60 minutes, and we will notify you if the liquidity becomes locked or burnt.`);
+            bot.sendMessage(process.env.TELEGRAM_CHAT_ID, `⚠️ ${tokenData.name} (${tokenData.symbol}) is partially validated! We will monitor this token for 60 minutes, and we will notify you if the liquidity becomes locked or burnt.`);
 
             db.push(`/tokens/${tokenData.contractAddress}`, {
                 ...tokenData,
@@ -145,6 +150,8 @@ const checkSendToken = async (tokenData, firstTry) => {
 setInterval(() => {
 
     const tokensToRetry = db.getData('/tokens');
+
+    console.log(`🤖 ${tokensToRetry.length} tokens to retry...`);
 
     for (const token of tokensToRetry) {
         // if token is added more than 60 minutes ago, remove it from the list
