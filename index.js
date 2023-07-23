@@ -141,7 +141,7 @@ const checkSendToken = async (tokenData, firstTry) => {
         const initialAuditData = await fetchAuditData(contractAddress);
         const initialAuditIsReady = initialAuditData && initialAuditData.status === 'success';
         
-        const HEADER = `__*New Token Detected by BlockRover!*__\n\n\n`;
+        const HEADER = `__*New Token Detected by BlockRover\\!*__\n\n\n`;
 
         const statisticsMessage = HEADER + formatTokenStatistics(tokenStatistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null, true);
     
@@ -188,7 +188,7 @@ const checkSendToken = async (tokenData, firstTry) => {
             ee.on('error', (error) => {
                 console.log(`🤖 ${contractAddress} audit error: ${error}`);
 
-                const newStatisticsErrored = statisticsMessage.replace(WAITING_GENERATION_AUDIT_MESSAGE, `[Use our web app](https://app.blockrover.io/audit) to generate the audit report.`);
+                const newStatisticsErrored = statisticsMessage.replace(WAITING_GENERATION_AUDIT_MESSAGE, `[Use our web app](https://app.blockrover.io/audit) to generate the audit report\\.`);
                 bot.editMessageText(newStatisticsErrored, {
                     parse_mode: 'MarkdownV2',
                     message_id: message.message_id,
