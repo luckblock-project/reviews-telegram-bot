@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@blockrover/goplus-ai-analyzer-js@1.3.6":
-  version "1.3.6"
-  resolved "https://npm.pkg.github.com/download/@blockrover/goplus-ai-analyzer-js/1.3.6/6ca4f616ea93f96d6013c188cc5ba7aabe55cfe5#6ca4f616ea93f96d6013c188cc5ba7aabe55cfe5"
-  integrity sha512-UwlBE88CtU6w9T8AS9yIt0uWk1mg7c/aUvm7m67YINsvoOcFAUUCATCjL0tArWEbALoZhSev1m1+7L921ZoZyw==
+"@blockrover/goplus-ai-analyzer-js@1.3.7":
+  version "1.3.7"
+  resolved "https://npm.pkg.github.com/download/@blockrover/goplus-ai-analyzer-js/1.3.7/0b797a10e4c02234f009bbfc6d380f845d83ceca#0b797a10e4c02234f009bbfc6d380f845d83ceca"
+  integrity sha512-RPS3W1Vwhhv4wwcc1BQ1diGZb3zwSOQDUVUZNM/9NZUSg1coIu0cR1ZgzhSF9NtPojGG13DK969LN/C/iwLZ/A==
   dependencies:
     aveta "^1.3.0"
     markdown-escape "^2.0.0"
