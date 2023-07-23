@@ -118,14 +118,16 @@ const checkSendToken = async (tokenData, firstTry) => {
                 addedAt: Date.now()
             });
         }
+
+        let previousMessageId = null;
         
         if (tokenStatistics.isValidated && !firstTry) {
             const tokenData = await db.getData(`/tokens/${tokenStatistics.contractAddress}`);
             bot.sendMessage(process.env.TELEGRAM_CHAT_ID, 'Liquidity is now Locked/Burnt.', {
                 reply_to_message_id: tokenData.messageId
             });
+            previousMessageId = tokenData.messageId;
             db.delete(`/tokens/${tokenData.contractAddress}`);
-            return;
         }
 
         console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is validated! (${tokenStatistics.isValidated ? 'COMPLETE': 'PARTIAL'})`);
@@ -137,8 +139,13 @@ const checkSendToken = async (tokenData, firstTry) => {
 
         const statisticsMessage = HEADER + formatTokenStatistics(tokenStatistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null, true);
     
-        const message = await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, statisticsMessage, {
+        const message = !previousMessageId ? await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, statisticsMessage, {
             parse_mode: 'Markdown',
+            disable_web_page_preview: true
+        }) : await bot.editMessageText(statisticsMessage, {
+            parse_mode: 'Markdown',
+            message_id: previousMessageId,
+            chat_id: process.env.TELEGRAM_CHAT_ID,
             disable_web_page_preview: true
         });
 
