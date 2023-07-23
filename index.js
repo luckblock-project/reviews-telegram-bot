@@ -123,9 +123,15 @@ const checkSendToken = async (tokenData, firstTry) => {
         
         if (tokenStatistics.isValidated && !firstTry) {
             const tokenData = await db.getData(`/tokens/${tokenStatistics.contractAddress}`);
-            bot.sendMessage(process.env.TELEGRAM_CHAT_ID, 'Liquidity is now Locked/Burnt.', {
-                reply_to_message_id: tokenData.messageId
-            });
+            if (tokenStatistics.isLocked) {
+                bot.sendMessage(process.env.TELEGRAM_CHAT_ID, `*[Liquidity is now Locked 🔒](${tokenStatistics.secondTokenAuditData?.lpLockLink})*`, {
+                    reply_to_message_id: tokenData.messageId
+                });
+            } else {
+                bot.sendMessage(process.env.TELEGRAM_CHAT_ID, `*[Liquidity is now Burnt 🔥](${tokenStatistics.secondTokenAuditData?.burnLink})*`, {
+                    reply_to_message_id: tokenData.messageId
+                });
+            }
             previousMessageId = tokenData.messageId;
             db.delete(`/tokens/${tokenData.contractAddress}`);
         }
@@ -135,15 +141,15 @@ const checkSendToken = async (tokenData, firstTry) => {
         const initialAuditData = await fetchAuditData(contractAddress);
         const initialAuditIsReady = initialAuditData && initialAuditData.status === 'success';
         
-        const HEADER = `__*New Token Detected by BlockRover!*__\n\n`;
+        const HEADER = `__*New Token Detected by BlockRover!*__\n\n\n`;
 
         const statisticsMessage = HEADER + formatTokenStatistics(tokenStatistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null, true);
     
         const message = !previousMessageId ? await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, statisticsMessage, {
-            parse_mode: 'Markdown',
+            parse_mode: 'MarkdownV2',
             disable_web_page_preview: true
         }) : await bot.editMessageText(statisticsMessage, {
-            parse_mode: 'Markdown',
+            parse_mode: 'MarkdownV2',
             message_id: previousMessageId,
             chat_id: process.env.TELEGRAM_CHAT_ID,
             disable_web_page_preview: true
@@ -172,7 +178,7 @@ const checkSendToken = async (tokenData, firstTry) => {
             ee.on('end', (audit) => {
                 const auditStatisticsMessage = HEADER + formatTokenStatistics(tokenStatistics, true, audit, true);
                 bot.editMessageText(auditStatisticsMessage, {
-                    parse_mode: 'Markdown',
+                    parse_mode: 'MarkdownV2',
                     message_id: message.message_id,
                     chat_id: process.env.TELEGRAM_CHAT_ID,
                     disable_web_page_preview: true
@@ -184,7 +190,7 @@ const checkSendToken = async (tokenData, firstTry) => {
 
                 const newStatisticsErrored = statisticsMessage.replace(WAITING_GENERATION_AUDIT_MESSAGE, `[Use our web app](https://app.blockrover.io/audit) to generate the audit report.`);
                 bot.editMessageText(newStatisticsErrored, {
-                    parse_mode: 'Markdown',
+                    parse_mode: 'MarkdownV2',
                     message_id: message.message_id,
                     chat_id: process.env.TELEGRAM_CHAT_ID,
                     disable_web_page_preview: true
