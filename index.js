@@ -3,6 +3,8 @@ config();
 
 import ws from 'ws';
 
+import { appendFileSync } from 'fs';
+
 import TelegramBot from 'node-telegram-bot-api';
 import { fetchTokenStatistics } from '@blockrover/goplus-ai-analyzer-js';
 
@@ -13,17 +15,14 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
     polling: true
 });
 
-const proxy = process.env.PROXY_URL; 
-const wsClient = new ws('wss://ws.dextools.io/', proxy ? {
-    agent: new HttpsProxyAgent(proxy)
-} : {});
+const wsClient = new ws('wss://ws.dextools.io/');
 
 wsClient.on('open', function open() {
 
     wsClient.on('message', async function incoming(data) {
         const res = JSON.parse(Buffer.from(data).toString('utf8')).result;
 
-        require('fs').appendFileSync('log.json', JSON.stringify(res) + '\n', 'utf8')
+        appendFileSync('log.json', JSON.stringify(res) + '\n', 'utf8')
 
         if (!res?.data?.pair?.creation) return;
         if (res.data.event !== 'create') return;
@@ -90,6 +89,8 @@ const checkSendToken = async (tokenData, firstTry) => {
 
     if (tokenStatistics.isValidated) {
 
+        console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is validated!`);
+
         const [statistics, initialAuditData] = await Promise.all([
             fetchTokenStatistics(contractAddress),
             fetchAuditData(contractAddress)
@@ -129,6 +130,9 @@ const checkSendToken = async (tokenData, firstTry) => {
         }
     }
     else if (tokenStatistics.isPartiallyValidated) {
+        
+        console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is partially validated!`);
+
         if (!firstTry) return;
         else {
 
