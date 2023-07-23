@@ -11,7 +11,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import { WAITING_GENERATION_AUDIT_MESSAGE, fetchTokenStatistics, fetchAuditData, formatTokenStatistics, waitForAuditEndOrError, triggerAudit } from '@blockrover/goplus-ai-analyzer-js';
 
 import { JsonDB, Config } from 'node-json-db';
-const db = new JsonDB(new Config("db", true, true, '/'));
+const db = new JsonDB(new Config(process.env.DATABASE_PATH, true, true, '/'));
 
 (async () => {
     if (!await db.exists('/tokens')) {
