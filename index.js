@@ -132,7 +132,10 @@ const checkSendToken = async (tokenData, firstTry) => {
 
         const initialAuditData = await fetchAuditData(contractAddress);
         const initialAuditIsReady = initialAuditData && initialAuditData.status === 'success';
-        const statisticsMessage = formatTokenStatistics(tokenStatistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null, true);
+        
+        const HEADER = `__*New Token Detected by BlockRover!*__\n\n`;
+
+        const statisticsMessage = HEADER + formatTokenStatistics(tokenStatistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null, true);
     
         const message = await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, statisticsMessage, {
             parse_mode: 'Markdown',
@@ -160,7 +163,7 @@ const checkSendToken = async (tokenData, firstTry) => {
             });
     
             ee.on('end', (audit) => {
-                const auditStatisticsMessage = formatTokenStatistics(tokenStatistics, true, audit, true);
+                const auditStatisticsMessage = HEADER + formatTokenStatistics(tokenStatistics, true, audit, true);
                 bot.editMessageText(auditStatisticsMessage, {
                     parse_mode: 'Markdown',
                     message_id: message.message_id,
