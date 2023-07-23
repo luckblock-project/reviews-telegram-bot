@@ -30,7 +30,7 @@ wsClient.on('open', function open() {
 
         appendFileSync('log.json', JSON.stringify(res) + '\n', 'utf8')
 
-        if (!res?.data?.pair?.creation) return;
+        //if (!res?.data?.pair?.creation) return;
         if (res.data.event !== 'create') return;
 
         //const main = res.data.pair.token1;
@@ -90,6 +90,8 @@ wsClient.on('open', function open() {
 
 
 const checkSendToken = async (tokenData, firstTry) => {
+
+    console.log(`🤖 Checking ${tokenData.name} (${tokenData.contractAddress})...`);
 
     const tokenStatistics = await fetchTokenStatistics(tokenData.contractAddress, tokenData.pairContractAddress);
 
