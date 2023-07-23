@@ -6,7 +6,7 @@ import ws from 'ws';
 import { appendFileSync } from 'fs';
 
 import TelegramBot from 'node-telegram-bot-api';
-import { fetchTokenStatistics } from '@blockrover/goplus-ai-analyzer-js';
+import { WAITING_GENERATION_AUDIT_MESSAGE, fetchTokenStatistics } from '@blockrover/goplus-ai-analyzer-js';
 
 import { JsonDB, Config } from 'node-json-db';
 const db = new JsonDB(new Config("db", true, false, '/'));
@@ -99,12 +99,17 @@ const checkSendToken = async (tokenData, firstTry) => {
 
         console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is validated!`);
 
+        let pErr;
         const [statistics, initialAuditData] = await Promise.all([
             fetchTokenStatistics(contractAddress),
             fetchAuditData(contractAddress)
-        ]);
+        ]).catch((e) => {
+            pErr = e;
+        });
     
-        if (!statistics) return;
+        if (!statistics) {
+            return void console.log(`🤖 ${contractAddress} statistics error!`, pErr);
+        }
     
         const initialAuditIsReady = initialAuditData && initialAuditData.status === 'success';
         const statisticsMessage = formatTokenStatistics(statistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null);
@@ -134,6 +139,13 @@ const checkSendToken = async (tokenData, firstTry) => {
     
             ee.on('error', (error) => {
                 console.log(`🤖 ${contractAddress} audit error: ${error}`);
+
+                const newStatisticsErrored = statisticsMessage.replace(WAITING_GENERATION_AUDIT_MESSAGE, `[Use our website](https://blockrover.io) to generate the audit report.`);
+                bot.editMessageText(newStatisticsErrored, {
+                    parse_mode: 'Markdown',
+                    message_id: message.message_id,
+                    chat_id: chatId
+                });
             });
         }
     }
