@@ -175,7 +175,7 @@ const checkSendToken = async (tokenData, firstTry) => {
             ee.on('error', (error) => {
                 console.log(`🤖 ${contractAddress} audit error: ${error}`);
 
-                const newStatisticsErrored = statisticsMessage.replace(WAITING_GENERATION_AUDIT_MESSAGE, `[Use our website](https://app.blockrover.io/audit) to generate the audit report.`);
+                const newStatisticsErrored = statisticsMessage.replace(WAITING_GENERATION_AUDIT_MESSAGE, `[Use our web app](https://app.blockrover.io/audit) to generate the audit report.`);
                 bot.editMessageText(newStatisticsErrored, {
                     parse_mode: 'Markdown',
                     message_id: message.message_id,
