@@ -112,13 +112,20 @@ const checkSendToken = async (tokenData, firstTry) => {
 
     if (tokenStatistics.isValidated || (tokenStatistics.isPartiallyValidated && firstTry)) {
 
-        if (tokenStatistics.isValidated) {
-            db.delete(`/tokens/${tokenData.contractAddress}`);
-        } else if (tokenStatistics.isPartiallyValidated && firstTry) {
+        if (tokenStatistics.isPartiallyValidated && firstTry) {
             db.push(`/tokens/${tokenData.contractAddress}`, {
                 ...tokenData,
                 addedAt: Date.now()
             });
+        }
+        
+        if (tokenStatistics.isValidated && !firstTry) {
+            const tokenData = await db.getData(`/tokens/${tokenStatistics.contractAddress}`);
+            bot.sendMessage(process.env.TELEGRAM_CHAT_ID, 'Liquidity is now Locked/Burnt.', {
+                reply_to_message_id: tokenData.messageId
+            });
+            db.delete(`/tokens/${tokenData.contractAddress}`);
+            return;
         }
 
         console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is validated! (${tokenStatistics.isValidated ? 'COMPLETE': 'PARTIAL'})`);
@@ -131,6 +138,14 @@ const checkSendToken = async (tokenData, firstTry) => {
             parse_mode: 'Markdown',
             disable_web_page_preview: true
         });
+
+        if (tokenStatistics.isPartiallyValidated) {
+            db.push(`/tokens/${tokenData.contractAddress}`, {
+                ...tokenData,
+                addedAt: Date.now(),
+                messageId: message.message_id
+            });
+        }
     
         if (!initialAuditIsReady) {
     
