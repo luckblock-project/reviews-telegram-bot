@@ -11,7 +11,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import { WAITING_GENERATION_AUDIT_MESSAGE, fetchTokenStatistics, fetchAuditData, formatTokenStatistics, waitForAuditEndOrError, triggerAudit } from '@blockrover/goplus-ai-analyzer-js';
 
 import { JsonDB, Config } from 'node-json-db';
-const db = new JsonDB(new Config("db", true, false, '/'));
+const db = new JsonDB(new Config("db", true, true, '/'));
 
 (async () => {
     if (!await db.exists('/tokens')) {
@@ -64,9 +64,11 @@ wsClient.on('open', function open() {
 
         console.log(`🤖 Queueing checking ${symbol} (${contractAddress})...`);
 
+        fetchTokenStatistics(tokenData.contractAddress).catch(() => {});
+
         setTimeout(() => {
             checkSendToken(tokenData, true);
-        }, 10_000);
+        }, 60_000);
 
     });
 
@@ -110,16 +112,25 @@ const checkSendToken = async (tokenData, firstTry) => {
 
     if (tokenStatistics.isValidated || (tokenStatistics.isPartiallyValidated && firstTry)) {
 
-        console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is validated! (${tokenStatistics.isPartiallyValidated ? 'PARTIAL': 'COMPLETE'})`);
+        if (tokenStatistics.isValidated) {
+            db.delete(`/tokens/${tokenData.contractAddress}`);
+        } else if (tokenStatistics.isPartiallyValidated && firstTry) {
+            db.push(`/tokens/${tokenData.contractAddress}`, {
+                ...tokenData,
+                addedAt: Date.now()
+            });
+        }
+
+        console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is validated! (${tokenStatistics.isValidated ? 'COMPLETE': 'PARTIAL'})`);
 
         const initialAuditData = await fetchAuditData(contractAddress);
         const initialAuditIsReady = initialAuditData && initialAuditData.status === 'success';
-        const statisticsMessage = formatTokenStatistics(tokenStatistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null);
+        const statisticsMessage = formatTokenStatistics(tokenStatistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null, true);
     
         const message = await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, statisticsMessage, {
-            parse_mode: 'Markdown'
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
         });
-        await bot.sendPhoto(process.env.TELEGRAM_CHAT_ID, 'https://i.imgur.com/XGsx0sl.jpg');
     
         if (!initialAuditIsReady) {
     
@@ -138,36 +149,31 @@ const checkSendToken = async (tokenData, firstTry) => {
                 bot.editMessageText(auditStatisticsMessage, {
                     parse_mode: 'Markdown',
                     message_id: message.message_id,
-                    chat_id: process.env.TELEGRAM_CHAT_ID
+                    chat_id: process.env.TELEGRAM_CHAT_ID,
+                    disable_web_page_preview: true
                 });
             });
     
             ee.on('error', (error) => {
                 console.log(`🤖 ${contractAddress} audit error: ${error}`);
 
-                const newStatisticsErrored = statisticsMessage.replace(WAITING_GENERATION_AUDIT_MESSAGE, `[Use our website](https://blockrover.io) to generate the audit report.`);
+                const newStatisticsErrored = statisticsMessage.replace(WAITING_GENERATION_AUDIT_MESSAGE, `[Use our website](https://app.blockrover.io/audit) to generate the audit report.`);
                 bot.editMessageText(newStatisticsErrored, {
                     parse_mode: 'Markdown',
                     message_id: message.message_id,
-                    chat_id: process.env.TELEGRAM_CHAT_ID
+                    chat_id: process.env.TELEGRAM_CHAT_ID,
+                    disable_web_page_preview: true
                 });
             });
         }
+
     }
     else {
         console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is not validated!`);
 
-        console.log(tokenStatistics.goPlusContractSecurity, tokenStatistics.goPlusTradingSecurity);
-    }
-
-    if (tokenStatistics.isPartiallyValidated) {
-        
-        console.log(`🤖 ${tokenData.name} (${tokenData.symbol}) is partially validated!`);
-
-            db.push(`/tokens/${tokenData.contractAddress}`, {
-                ...tokenData,
-                addedAt: Date.now()
-            });
+        if (firstTry) {
+            console.log(tokenStatistics.goPlusContractSecurity, tokenStatistics.goPlusTradingSecurity);
+        }
     }
 
 }
