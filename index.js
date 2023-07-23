@@ -11,6 +11,12 @@ import { fetchTokenStatistics } from '@blockrover/goplus-ai-analyzer-js';
 import { JsonDB, Config } from 'node-json-db';
 const db = new JsonDB(new Config("db", true, false, '/'));
 
+(async () => {
+    if (!await db.exists('/tokens')) {
+        db.push('/tokens', {});
+    }
+})();
+
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
     polling: true
 });
@@ -149,18 +155,19 @@ const checkSendToken = async (tokenData, firstTry) => {
 
 }
 
-setInterval(() => {
+setInterval(async () => {
 
-    const tokensToRetry = db.getData('/tokens');
+    const tokensToRetry = await db.getData('/tokens');
 
-    console.log(`🤖 ${tokensToRetry.length} tokens to retry...`);
+    console.log(`🤖 ${Object.keys(tokensToRetry).length} tokens to retry...`);
 
-    for (const token of tokensToRetry) {
+    for (const token of Object.keys(tokensToRetry)) {
+        const tokenData = tokensToRetry[token];
         // if token is added more than 60 minutes ago, remove it from the list
-        if (Date.now() - token.addedAt > 60 * 60 * 1000) {
-            db.delete(`/tokens/${token.contractAddress}`);
+        if (Date.now() - tokenData.addedAt > 60 * 60 * 1000) {
+            await db.delete(`/tokens/${tokenData.contractAddress}`);
         } else {
-            checkSendToken(token, false);
+            checkSendToken(tokenData, false);
         }
     }
 
