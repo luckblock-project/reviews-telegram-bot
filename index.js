@@ -145,7 +145,7 @@ const checkSendToken = async (tokenData, firstTry) => {
             });
     
             ee.on('end', (audit) => {
-                const auditStatisticsMessage = formatTokenStatistics(tokenStatistics, true, audit);
+                const auditStatisticsMessage = formatTokenStatistics(tokenStatistics, true, audit, true);
                 bot.editMessageText(auditStatisticsMessage, {
                     parse_mode: 'Markdown',
                     message_id: message.message_id,
