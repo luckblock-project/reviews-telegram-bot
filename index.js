@@ -6,8 +6,6 @@ import ws from 'ws';
 import TelegramBot from 'node-telegram-bot-api';
 import { fetchTokenStatistics } from '@blockrover/goplus-ai-analyzer-js';
 
-import { checkSendToken } from './check-send-token';
-
 import { JsonDB, Config } from 'node-json-db';
 const db = new JsonDB(new Config("db", true, false, '/'));
 
@@ -48,7 +46,7 @@ wsClient.on('open', function open() {
         const pairSymbol = pair.symbol;
         const pairContractAddress = pair.id;
 
-        const data = {
+        const tokenData = {
             name,
             symbol,
             contractAddress,
@@ -57,7 +55,7 @@ wsClient.on('open', function open() {
             pairContractAddress
         }
 
-        checkSendToken(data, true);
+        checkSendToken(tokenData, true);
 
     });
 
