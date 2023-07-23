@@ -114,7 +114,9 @@ const checkSendToken = async (tokenData, firstTry) => {
         const initialAuditIsReady = initialAuditData && initialAuditData.status === 'success';
         const statisticsMessage = formatTokenStatistics(statistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null);
     
-        const message = await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, statisticsMessage);
+        const message = await bot.sendPhoto(process.env.TELEGRAM_CHAT_ID, 'https://i.imgur.com/XGsx0sl.jpg', {
+            caption: statisticsMessage
+        });
     
         if (!initialAuditIsReady) {
     
@@ -130,7 +132,7 @@ const checkSendToken = async (tokenData, firstTry) => {
     
             ee.on('end', (audit) => {
                 const auditStatisticsMessage = formatTokenStatistics(statistics, true, audit);
-                bot.editMessageText(auditStatisticsMessage, {
+                bot.editMessageCaption(auditStatisticsMessage, {
                     parse_mode: 'Markdown',
                     message_id: message.message_id,
                     chat_id: chatId
@@ -141,7 +143,7 @@ const checkSendToken = async (tokenData, firstTry) => {
                 console.log(`🤖 ${contractAddress} audit error: ${error}`);
 
                 const newStatisticsErrored = statisticsMessage.replace(WAITING_GENERATION_AUDIT_MESSAGE, `[Use our website](https://blockrover.io) to generate the audit report.`);
-                bot.editMessageText(newStatisticsErrored, {
+                bot.editMessageCaption(newStatisticsErrored, {
                     parse_mode: 'Markdown',
                     message_id: message.message_id,
                     chat_id: chatId
