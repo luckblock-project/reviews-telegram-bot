@@ -8,7 +8,7 @@ import { appendFileSync } from 'fs';
 import { EventEmitter } from 'events';
 
 import TelegramBot from 'node-telegram-bot-api';
-import { WAITING_GENERATION_AUDIT_MESSAGE, fetchTokenStatistics, fetchAuditData, formatTokenStatistics, waitForAuditEndOrError, triggerAudit } from '@blockrover/goplus-ai-analyzer-js';
+import { WAITING_GENERATION_AUDIT_MESSAGE, fetchTokenStatistics, fetchAuditData, formatTokenStatistics, waitForAuditEndOrError, triggerAudit, escapeMarkdownV2 } from '@blockrover/goplus-ai-analyzer-js';
 
 import { JsonDB, Config } from 'node-json-db';
 const db = new JsonDB(new Config(process.env.DATABASE_PATH, true, true, '/'));
@@ -126,12 +126,14 @@ const checkSendToken = async (tokenData, firstTry) => {
             if (tokenStatistics.isLocked) {
                 bot.sendMessage(process.env.TELEGRAM_CHAT_ID, `*[Liquidity is now Locked 🔒](${tokenStatistics.secondTokenAuditData?.lpLockLink})*`, {
                     reply_to_message_id: tokenData.messageId,
-                    parse_mode: 'MarkdownV2'
+                    parse_mode: 'MarkdownV2',
+                    disable_web_page_preview: true
                 });
             } else {
                 bot.sendMessage(process.env.TELEGRAM_CHAT_ID, `*[Liquidity is now Burnt 🔥](${tokenStatistics.secondTokenAuditData?.burnLink})*`, {
                     reply_to_message_id: tokenData.messageId,
-                    parse_mode: 'MarkdownV2'
+                    parse_mode: 'MarkdownV2',
+                    disable_web_page_preview: true
                 });
             }
             previousMessageId = tokenData.messageId;
@@ -190,7 +192,7 @@ const checkSendToken = async (tokenData, firstTry) => {
             ee.on('error', (error) => {
                 console.log(`🤖 ${contractAddress} audit error: ${error}`);
 
-                const newStatisticsErrored = statisticsMessage.replace(WAITING_GENERATION_AUDIT_MESSAGE, `[Use our web app](https://app.blockrover.io/audit) to generate the audit report\\.`);
+                const newStatisticsErrored = statisticsMessage.replace(escapeMarkdownV2(WAITING_GENERATION_AUDIT_MESSAGE), `[Use our web app](https://app.blockrover.io/audit) to generate the audit report\\.`);
                 bot.editMessageText(newStatisticsErrored, {
                     parse_mode: 'MarkdownV2',
                     message_id: message.message_id,
