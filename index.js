@@ -25,55 +25,30 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
 
 const wsClient = new ws('wss://ws.dextools.io/');
 
-wsClient.on('open', function open() {
+function connect() {
+    console.log("Attempting to connect...");
 
-    wsClient.on('message', async function incoming(data) {
-        const res = JSON.parse(Buffer.from(data).toString('utf8')).result;
-
-        appendFileSync('log.json', JSON.stringify(res) + '\n', 'utf8')
-
-        //if (!res?.data?.pair?.creation) return;
-        if (res.data.event !== 'create') return;
-
-        //const main = res.data.pair.token1;
-        //const pair = res.data.pair.token0;
-
-        // get the pair that is not weth
-
-        const main = res.data.pair.token0.symbol === 'WETH' ? res.data.pair.token1 : res.data.pair.token0;
-        const pair = res.data.pair.token0.symbol === 'WETH' ? res.data.pair.token0 : res.data.pair.token1;
-
-        if (!pair || !main) return;
-
-        const name = main.name;
-        const symbol = main.symbol;
-        const contractAddress = main.id;
-
-        const pairName = pair.name;
-        const pairSymbol = pair.symbol;
-        const pairContractAddress = pair.id;
-
-        const tokenData = {
-            name,
-            symbol,
-            contractAddress,
-            pairName,
-            pairSymbol,
-            pairContractAddress
-        }
-
-        console.log(`🤖 Queueing checking ${symbol} (${contractAddress})...`);
-
-        fetchTokenStatistics(tokenData.contractAddress).catch(() => {});
-
-        setTimeout(() => {
-            checkSendToken(tokenData, true);
-        }, 60_000);
-
+    wsClient.on('open', function open() {
+        handleOpen();
     });
 
-    console.log('connected');
+    wsClient.on('close', function close() {
+        console.log('Connection lost, retrying in 5 seconds...');
+        setTimeout(connect, 5000); // Retry every 5 seconds
+    });
 
+    wsClient.on('message', async function incoming(data) {
+        handleMessage(data);
+    });
+
+    wsClient.on('error', function error(e) {
+        console.log('Error: ', e);
+    });
+}
+
+connect();
+
+function handleOpen () {
     wsClient.send(JSON.stringify({
         jsonrpc: "2.0",
         method: "subscribe",
@@ -93,8 +68,52 @@ wsClient.on('open', function open() {
         },
         id: 2
     }));
+}
 
-});
+function handleMessage (data) {
+    const res = JSON.parse(Buffer.from(data).toString('utf8')).result;
+
+    appendFileSync('log.json', JSON.stringify(res) + '\n', 'utf8')
+
+    //if (!res?.data?.pair?.creation) return;
+    if (res.data.event !== 'create') return;
+
+    //const main = res.data.pair.token1;
+    //const pair = res.data.pair.token0;
+
+    // get the pair that is not weth
+
+    const main = res.data.pair.token0.symbol === 'WETH' ? res.data.pair.token1 : res.data.pair.token0;
+    const pair = res.data.pair.token0.symbol === 'WETH' ? res.data.pair.token0 : res.data.pair.token1;
+
+    if (!pair || !main) return;
+
+    const name = main.name;
+    const symbol = main.symbol;
+    const contractAddress = main.id;
+
+    const pairName = pair.name;
+    const pairSymbol = pair.symbol;
+    const pairContractAddress = pair.id;
+
+    const tokenData = {
+        name,
+        symbol,
+        contractAddress,
+        pairName,
+        pairSymbol,
+        pairContractAddress
+    }
+
+    console.log(`🤖 Queueing checking ${symbol} (${contractAddress})...`);
+
+    fetchTokenStatistics(tokenData.contractAddress).catch(() => {});
+
+    setTimeout(() => {
+        checkSendToken(tokenData, true);
+    }, 60_000);
+
+};
 
 
 const checkSendToken = async (tokenData, firstTry) => {
