@@ -125,11 +125,13 @@ const checkSendToken = async (tokenData, firstTry) => {
             const tokenData = await db.getData(`/tokens/${tokenStatistics.contractAddress}`);
             if (tokenStatistics.isLocked) {
                 bot.sendMessage(process.env.TELEGRAM_CHAT_ID, `*[Liquidity is now Locked 🔒](${tokenStatistics.secondTokenAuditData?.lpLockLink})*`, {
-                    reply_to_message_id: tokenData.messageId
+                    reply_to_message_id: tokenData.messageId,
+                    parse_mode: 'MarkdownV2'
                 });
             } else {
                 bot.sendMessage(process.env.TELEGRAM_CHAT_ID, `*[Liquidity is now Burnt 🔥](${tokenStatistics.secondTokenAuditData?.burnLink})*`, {
-                    reply_to_message_id: tokenData.messageId
+                    reply_to_message_id: tokenData.messageId,
+                    parse_mode: 'MarkdownV2'
                 });
             }
             previousMessageId = tokenData.messageId;
