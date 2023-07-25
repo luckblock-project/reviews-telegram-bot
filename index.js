@@ -78,7 +78,7 @@ function handleOpen () {
 
     pingInterval = setInterval(() => {
         if (Date.now() - lastPingReceivedTs > 60_000 * 3) {
-            console.log('Connection lost, retrying in 5 seconds...');
+            console.log('Connection lost (no ping), retrying in 5 seconds...');
             setTimeout(connect, 5000); // Retry every 5 seconds
             if (pingInterval) {
                 clearInterval(pingInterval);
