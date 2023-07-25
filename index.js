@@ -23,13 +23,15 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
     polling: true
 });
 
-const wsClient = new ws('wss://ws.dextools.io/');
+let wsClient = null;
 
 let pingInterval = null;
 let lastPingReceivedTs = Date.now();
 
 function connect() {
     console.log("Attempting to connect...");
+
+    wsClient = new ws('wss://ws.dextools.io/');
 
     wsClient.on('open', function open() {
         handleOpen();
