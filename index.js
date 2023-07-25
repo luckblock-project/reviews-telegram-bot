@@ -85,6 +85,7 @@ function handleOpen () {
             }
             wsClient.terminate();
         }
+        console.log(`🤖 Sending ping...`);
         wsClient.send(JSON.stringify({
             jsonrpc: "2.0",
             method: "ping",
@@ -98,6 +99,7 @@ function handleMessage (data) {
     const receivedString = Buffer.from(data).toString('utf8');
 
     if (receivedString === 'pong') {
+        console.log(`🤖 Received pong!`);
         lastPingReceivedTs = Date.now();
         return;
     }
