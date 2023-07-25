@@ -86,11 +86,7 @@ function handleOpen () {
             wsClient.terminate();
         }
         console.log(`🤖 Sending ping...`);
-        wsClient.send(JSON.stringify({
-            jsonrpc: "2.0",
-            method: "ping",
-            id: 3
-        }));
+        wsClient.send('ping');
     }, 60_000);
 }
 
