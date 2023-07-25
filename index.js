@@ -98,6 +98,8 @@ function handleMessage (data) {
 
     const receivedString = Buffer.from(data).toString('utf8');
 
+    console.log(`🤖 Received message: ${receivedString}`)
+
     if (receivedString === 'pong') {
         console.log(`🤖 Received pong!`);
         lastPingReceivedTs = Date.now();
