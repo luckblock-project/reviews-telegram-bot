@@ -25,6 +25,9 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
 
 const wsClient = new ws('wss://ws.dextools.io/');
 
+let pingInterval = null;
+let lastPingReceivedTs = Date.now();
+
 function connect() {
     console.log("Attempting to connect...");
 
@@ -35,6 +38,10 @@ function connect() {
     wsClient.on('close', function close() {
         console.log('Connection lost, retrying in 5 seconds...');
         setTimeout(connect, 5000); // Retry every 5 seconds
+
+        if (pingInterval) {
+            clearInterval(pingInterval);
+        }
     });
 
     wsClient.on('message', async function incoming(data) {
@@ -68,10 +75,34 @@ function handleOpen () {
         },
         id: 2
     }));
+
+    pingInterval = setInterval(() => {
+        if (Date.now() - lastPingReceivedTs > 60_000 * 3) {
+            console.log('Connection lost, retrying in 5 seconds...');
+            setTimeout(connect, 5000); // Retry every 5 seconds
+            if (pingInterval) {
+                clearInterval(pingInterval);
+            }
+            wsClient.terminate();
+        }
+        wsClient.send(JSON.stringify({
+            jsonrpc: "2.0",
+            method: "ping",
+            id: 3
+        }));
+    }, 60_000);
 }
 
 function handleMessage (data) {
-    const res = JSON.parse(Buffer.from(data).toString('utf8')).result;
+
+    const receivedString = Buffer.from(data).toString('utf8');
+
+    if (receivedString === 'pong') {
+        lastPingReceivedTs = Date.now();
+        return;
+    }
+
+    const res = JSON.parse(receivedString).result;
 
     appendFileSync('log.json', JSON.stringify(res) + '\n', 'utf8')
 
