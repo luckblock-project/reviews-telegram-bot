@@ -209,7 +209,7 @@ const checkSendToken = async (tokenData, firstTry) => {
             disable_web_page_preview: true
         });
 
-        if (tokenStatistics.isPartiallyValidated) {
+        if (tokenStatistics.isPartiallyValidated && firstTry) {
             db.push(`/tokens/${tokenData.contractAddress}`, {
                 ...tokenData,
                 addedAt: Date.now(),
