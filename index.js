@@ -195,7 +195,7 @@ const checkSendToken = async (tokenData, firstTry) => {
         const initialAuditData = await fetchAuditData(contractAddress);
         const initialAuditIsReady = initialAuditData && initialAuditData.status === 'success';
         
-        const HEADER = `__*New Token Detected by BlockRover\\!*__\n\n\n`;
+        const HEADER = `__*New Token Detected by LuckBlock\\!*__\n\n\n`;
 
         const statisticsMessage = HEADER + formatTokenStatistics(tokenStatistics, true, initialAuditIsReady ? JSON.parse(initialAuditData?.data) : null, true);
     
