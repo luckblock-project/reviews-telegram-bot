@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
-  '@blockrover/goplus-ai-analyzer-js':
+  '@luckblock-project/core-ai-analyzer-js':
     specifier: ^1.0.1
     version: 1.0.1
   dotenv:
@@ -29,8 +29,8 @@ dependencies:
 
 packages:
 
-  /@blockrover/goplus-ai-analyzer-js@1.0.1:
-    resolution: {integrity: sha512-b2ncQQyWM7qVEa3QQCW3+HDbMilO71vq2zQaRR6Pt6t34HfvadBZ8cMdI5xpTkpdPcAToGYAmCKlETOWz2KrcA==, tarball: https://npm.pkg.github.com/download/@blockrover/goplus-ai-analyzer-js/1.0.1/c44d8a7805031e765ed61b4079fc731cc97733aa}
+  /@luckblock-project/core-ai-analyzer-js@1.0.1:
+    resolution: {integrity: sha512-b2ncQQyWM7qVEa3QQCW3+HDbMilO71vq2zQaRR6Pt6t34HfvadBZ8cMdI5xpTkpdPcAToGYAmCKlETOWz2KrcA==, tarball: https://npm.pkg.github.com/download/@luckblock-project/core-ai-analyzer-js/1.0.1/c44d8a7805031e765ed61b4079fc731cc97733aa}
     dev: false
 
   /agent-base@7.1.0:
